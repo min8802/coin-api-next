@@ -1,95 +1,62 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
 
-export default function Home() {
+import CoinCard from "@/components/CoinCard";
+import { Button, Flex } from "@chakra-ui/react";
+import { NextPage } from "next";
+import { useEffect, useState } from "react";
+
+const Home: NextPage = () => {
+  const [coins, setCoins] = useState<Coin[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 10;
+
+  const visibleCoins = coins.slice(0, currentPage * itemsPerPage);
+  //slice(0,x) -> 0부터 몇개까지 보여줄건지 슬라이싱 할 수 있음
+  //밑에 visibleCoins로 맵핑하면 10개만 우선 보임
+
+  useEffect(() => {
+    const fetchCoins = async () => {
+      try {
+        const res = await fetch("/api/coins");
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch coins");
+        }
+
+        const data = await res.json();
+
+        setCoins(data);
+      } catch (error: any) {
+        console.error(error);
+
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      } //try로 빠지든 catch로 빠지든 finally 마지막에 실행됨
+    };
+
+    fetchCoins();
+  }, []);
+
+  useEffect(() => console.log(coins), [coins]);
+
+  if (loading) return <Flex>Loading...</Flex>;
+  if (error) return <Flex>Error: {error}</Flex>;
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    <Flex bgColor="red.100" flexDir="column" alignItems="center" py={8} gap={2}>
+      {visibleCoins.map((v, i) => (
+        <CoinCard key={i} coin={v} />
+      ))}
+      {visibleCoins.length < coins.length && (
+        <Button mt={4} onClick={() => setCurrentPage(currentPage + 1)}>
+          더보기
+        </Button>
+      )}
+    </Flex>
   );
-}
+};
+
+export default Home;
